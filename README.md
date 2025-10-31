@@ -38,19 +38,3 @@ include("dashboard.jl")
 ```
 
 The dashboard should be served at http://localhost:9384
-
-## Dev notes
-
-There is a bug in Agtor.jl caused by the assumption that files can be asynchronously
-read in with multiple threads. For the majority of cases this is not an issue, however,
-when running the dashboard (with asynchronous threads), a race condition can be met leading
-to files not being read, which in turns causes the model run to file.
-
-An "UndefRefError: access to undefined reference" warning will be raised.
-
-In the majority of cases the model can simply be re-run without issue. In the rare case, it can lead to the Julia session crashing.
-
-Potential fix is simple:
-
-Delete `Threads.@threads` from this line:
-https://github.com/ConnectedSystems/Agtor.jl/blob/4670fd904fec4a1e83392a1e93092e965bf3808e/src/AgBase/io.jl#L30
