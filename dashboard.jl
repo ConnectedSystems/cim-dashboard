@@ -76,11 +76,6 @@ dam_level_ax.xlabel = "Days"
 ylims!(minimum(dam_level[][1:end-1]) - 1.0, maximum(dam_level[][1:end-1]) + 1.0)
 lines!(dam_level_ax, dam_level)
 
-# Create example DataFrame to display as table
-# Technically, any Tables.jl-compatible data type should work
-# https://simondanisch.github.io/Bonito.jl/stable/widgets.html#Working-with-DataFrames
-# table_data = Observable(DataFrame(rand(3, 5), :auto))
-
 RESULTS_CACHE = Dict{String,Vector{Float64}}()
 
 app = App() do
@@ -125,9 +120,9 @@ app = App() do
             # Re-run model and store updated values in the relevant observable
             farm_results, dl = CampaspeIntegratedModel.run_model(scenario)
 
-            # Update table
-            # This doesn't work, need to work out why or a potential workaround
-            # table_data[] = DataFrame(rand(3, 5), :auto)
+            # Update table here...
+
+            # Memoize results
             RESULTS_CACHE[cache_key] = dl[1:end-1]  # Ignore last time step
         else
             @info "Re-using cached results for: $(climate_scen) | $(farm_opt) | $(policy_opt)"
