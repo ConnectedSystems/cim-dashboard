@@ -123,15 +123,7 @@ lines!(dam_level_ax, dam_level)
 # https://simondanisch.github.io/Bonito.jl/stable/widgets.html#Working-with-DataFrames
 # table_data = Observable(DataFrame(rand(3, 5), :auto))
 
-# Vitor needs:
-# - Mean Profit for catchment (for five year sim)
-# - Dropdown of climate datasets
-#    - Consensus, Best Case, Worst Case
-# - Farm option
-#     - See: https://github.com/vitorhirata/campaspe-integrated-model/blob/d0c666c5d30226c45f74a88605aba1a56f18db66/src/PathwayDiversity/farm_options.jl#L16
-# - Policy options see:
-#     - https://github.com/vitorhirata/campaspe-integrated-model/pull/3/files
-#     - https://github.com/vitorhirata/campaspe-integrated-model/blob/d0c666c5d30226c45f74a88605aba1a56f18db66/src/PathwayDiversity/policy_options.jl#L17
+RESULTS_CACHE = Dict{String,Vector{Float64}}()
 
 app = App() do
     # Add CSS
@@ -142,6 +134,12 @@ app = App() do
     climate_option_dropdown = Dropdown(available_climate_scenarios(); index=1)
     run_button = Button("Run")
 
+    climate_scen = parse_option(climate_option_dropdown.value[])
+    farm_opt = parse_option(farm_option_dropdown.value[])
+    policy_opt = parse_option(policy_option_dropdown.value[])
+    cache_key = "$(climate_scen)__$(farm_opt)__$(policy_opt)"
+    RESULTS_CACHE[cache_key] = dam_level[]
+
     on(run_button.value) do click
         climate_scen = parse_option(climate_option_dropdown.value[])
         farm_opt = parse_option(farm_option_dropdown.value[])
@@ -149,28 +147,35 @@ app = App() do
 
         # TODO:
         #   Loading/running indicator
-        #   Run cache so previously run results are not thrown away
-        @info "Re-running: $(climate_scen) | $(farm_opt) | $(policy_opt)"
 
-        # Update the scenario spec here!
-        climate_data_fn = "$(climate_scen)_rcp45_2016-2045"
-        farm_data = joinpath(CLIMATE_DIR, climate_data_fn, FARM_CLIMATE_FN)
-        sw_data = joinpath(CLIMATE_DIR, climate_data_fn, SW_CLIMATE_FN)
+        # Create unique hash/key
+        cache_key = "$(climate_scen)__$(farm_opt)__$(policy_opt)"
+        if cache_key ∉ keys(RESULTS_CACHE)
+            @info "Running: $(climate_scen) | $(farm_opt) | $(policy_opt)"
 
-        scenario.farm_climate_path = farm_data
-        scenario.sw_climate_path = sw_data
-        # scenario.restriction_type = ...
-        # scenario.max_carryover_perc = ...
-        # scenario.carryover_period = ...
+            # Update the scenario spec here!
+            climate_data_fn = "$(climate_scen)_rcp45_2016-2045"
+            farm_data = joinpath(CLIMATE_DIR, climate_data_fn, FARM_CLIMATE_FN)
+            sw_data = joinpath(CLIMATE_DIR, climate_data_fn, SW_CLIMATE_FN)
 
-        # Update table
-        # This doesn't work, need to work out why or a potential workaround
-        # table_data[] = DataFrame(rand(3, 5), :auto)
+            scenario.farm_climate_path = farm_data
+            scenario.sw_climate_path = sw_data
+            # scenario.restriction_type = ...
+            # scenario.max_carryover_perc = ...
+            # scenario.carryover_period = ...
 
-        # Re-run model and store updated values in the relevant observable
-        farm_results, dl = CampaspeIntegratedModel.run_model(scenario)
-        dam_level[] = dl[1:end-1]  # Ignore last time step
+            # Re-run model and store updated values in the relevant observable
+            farm_results, dl = CampaspeIntegratedModel.run_model(scenario)
 
+            # Update table
+            # This doesn't work, need to work out why or a potential workaround
+            # table_data[] = DataFrame(rand(3, 5), :auto)
+            RESULTS_CACHE[cache_key] = dl[1:end-1]  # Ignore last time step
+        else
+            @info "Re-using cached results for: $(climate_scen) | $(farm_opt) | $(policy_opt)"
+        end
+
+        dam_level[] = RESULTS_CACHE[cache_key]
         ylims!(minimum(dam_level[][1:end-1]) - 1.0, maximum(dam_level[][1:end-1]) + 1.0)
 
         @info "Finished update"
