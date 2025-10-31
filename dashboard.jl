@@ -14,62 +14,20 @@ using DataFrames
 using CampaspeIntegratedModel
 
 
-# Ensure temporary data dir for dashboard exists
-tmp_dir_db = "data/dashboard_tmp"
-if !isdir(tmp_dir_db)
-    mkdir(tmp_dir_db)
-end
+include("./src/common.jl")
+include("./src/options.jl")
+include("./src/table_handler.jl")
 
-FARM_CLIMATE_FN = "farm_climate.csv"
-SW_CLIMATE_FN = "sw_climate.csv"
-CLIMATE_DIR = joinpath("data/climate")
 
-function available_farm_options()::Vector{String}
-    return String[
-        "Improve Irrigation Efficiency",
-        "Implement Solar Panels",
-        "Adopt Drought Resistant Crops",
-        "Improve Soil Taw",
-        "Increase Farm Entitlements",
-        "Decrease Farm Entitlements"
-    ]
-end
+# Create an Observable for table data
+info_table = Observable(DataFrame(
+    Metric_A=rand(3),
+    Metric_B=rand(3),
+    Metric_C=rand(3)
+))
 
-function available_policy_options()::Vector{String}
-    return String[
-        "Implement Coupled Allocations",
-        "Increase Environmental Water",
-        "Decrease Environmental Water",
-        "Increase Water Price",
-        "Decrease Water Price",
-        "Raise Dam Level",
-        "Subsidise Irrigation Efficiency",
-        "Subsidise Solar Pump"
-    ]
-end
-
-function available_climate_scenarios()::Vector{String}
-    return String[
-        "Maximum Consensus",
-        "Best Case",
-        "Worst Case"
-    ]
-end
-
-"""
-    parse_option(opt::String)::String
-
-Parse control options back to matching option identifier.
-
-# Example
-```julia
-parse_option("Improve Irrigation Efficiency")
-# improve_irrigation_efficiency
-```
-"""
-function parse_option(opt::String)::String
-    return lowercase(replace(opt, " " => "_"))
-end
+# Create an Observable for the HTML table
+html_table = Observable(df_to_html_table(info_table[]))
 
 scenario_template = Dict(
     :start_day => "2025-01-01",
@@ -175,6 +133,16 @@ app = App() do
             @info "Re-using cached results for: $(climate_scen) | $(farm_opt) | $(policy_opt)"
         end
 
+        # Move this into the cache_key block when ready
+        # Update the HTML table whenever info_table changes
+        # For now, update table with new random values
+        info_table[] = DataFrame(
+            Metric_A=rand(3),
+            Metric_B=rand(3),
+            Metric_C=rand(3)
+        )
+        html_table[] = df_to_html_table(info_table[])
+
         dam_level[] = RESULTS_CACHE[cache_key]
         ylims!(minimum(dam_level[][1:end-1]) - 1.0, maximum(dam_level[][1:end-1]) + 1.0)
 
@@ -208,13 +176,8 @@ app = App() do
                 class="plots-panel",
                 # DOM.h3("Dam Level"),
                 DOM.div(f1, class="plots-container"),
-                # DOM.div(Bonito.Table(table_data), class="plots-container"),
-            ),
-            # DOM.div(
-            #     class="plots-panel",
-            #     DOM.h3("Random"),
-            #     DOM.div(f2, class="plots-container")
-            # )
+                DOM.div(html_table, class="table-container")
+            )
         )
     )
 end
