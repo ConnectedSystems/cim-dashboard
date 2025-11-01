@@ -2,6 +2,7 @@
 
 function available_farm_options()::Vector{String}
     return String[
+        "Default",
         "Improve Irrigation Efficiency",
         "Implement Solar Panels",
         "Adopt Drought Resistant Crops",
@@ -13,6 +14,7 @@ end
 
 function available_policy_options()::Vector{String}
     return String[
+        "Default",
         "Implement Coupled Allocations",
         "Increase Environmental Water",
         "Decrease Environmental Water",
