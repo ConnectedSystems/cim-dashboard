@@ -36,6 +36,7 @@ scenario_template = Dict(
     :farm_climate_path => joinpath(CLIMATE_DIR, "maximum_consensus_rcp45_2016-2045", FARM_CLIMATE_FN),
     :farm_path => "data/farm/basin",
     :farm_step => 14,
+    :farm_option => "",
     # Policy parameters
     :policy_path => "data/policy",
     :goulburn_alloc => "high",
@@ -43,6 +44,7 @@ scenario_template = Dict(
     :max_carryover_perc => 0.25,
     :carryover_period => 1,
     :dam_extractions_path => "data/policy/eppalock_extractions.csv",
+    :policy_option => "",
     # Surface water parameters
     :sw_climate_path => joinpath(CLIMATE_DIR, "maximum_consensus_rcp45_2016-2045", SW_CLIMATE_FN),
     :sw_network_path => "data/surface_water/campaspe_network.yml",
@@ -61,7 +63,7 @@ dam_level = Observable(Float64[])
 # so that initial run does not slow down app launch
 init_dl_data_fn = joinpath(tmp_dir_db, "initial_dam_results.dat")
 if !isfile(init_dl_data_fn)
-    farm_results, dl = CampaspeIntegratedModel.run_model(scenario)
+    farm_results, dl, recreational_index, ecological_index = CampaspeIntegratedModel.run_model(scenario)
     dam_level[] = dl[1:end-1]  # Ignore last time step
     serialize(init_dl_data_fn, dl[1:end-1])
 else
@@ -113,12 +115,14 @@ app = App() do
 
             scenario.farm_climate_path = farm_data
             scenario.sw_climate_path = sw_data
+            scenario.farm_option = farm_opt
+            scenario.policy_option = policy_opt
             # scenario.restriction_type = ...
             # scenario.max_carryover_perc = ...
             # scenario.carryover_period = ...
 
             # Re-run model and store updated values in the relevant observable
-            farm_results, dl = CampaspeIntegratedModel.run_model(scenario)
+            farm_results, dl, recreational_index, ecological_index = CampaspeIntegratedModel.run_model(scenario)
 
             # Update table here...
 
