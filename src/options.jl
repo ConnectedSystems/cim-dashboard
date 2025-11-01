@@ -28,9 +28,12 @@ end
 
 function available_climate_scenarios()::Vector{String}
     return String[
-        "Maximum Consensus",
-        "Best Case",
-        "Worst Case"
+        "Maximum Consensus RCP45",
+        "Best Case RCP45",
+        "Worst Case RCP45",
+        "Maximum Consensus RCP85",
+        "Best Case RCP85",
+        "Worst Case RCP85"
     ]
 end
 

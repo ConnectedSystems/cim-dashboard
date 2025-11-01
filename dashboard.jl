@@ -109,7 +109,7 @@ app = App() do
             @info "Running: $(climate_scen) | $(farm_opt) | $(policy_opt)"
 
             # Update the scenario spec here!
-            climate_data_fn = "$(climate_scen)_rcp45_2016-2045"
+            climate_data_fn = "$(climate_scen)_2016-2045"
             farm_data = joinpath(CLIMATE_DIR, climate_data_fn, FARM_CLIMATE_FN)
             sw_data = joinpath(CLIMATE_DIR, climate_data_fn, SW_CLIMATE_FN)
 
